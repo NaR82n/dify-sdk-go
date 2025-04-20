@@ -13,8 +13,12 @@ import (
 )
 
 type FileUploadRequest struct {
-	FilePath string `json:"file"`
-	User     string `json:"user"`
+	FilePath string `json:"file_path"`
+
+	FileName    string `json:"file_name"`
+	FileContent []byte
+
+	User string `json:"user"`
 }
 
 type FileUploadResponse struct {
@@ -29,28 +33,40 @@ type FileUploadResponse struct {
 
 func (api *API) UploadFile(ctx context.Context, request FileUploadRequest) (*FileUploadResponse, error) {
 
-	file, err := os.Open(request.FilePath)
-	if err != nil {
-		log.Fatalf("无法打开文件: %v", err)
-	}
-	defer file.Close()
-
 	// 创建一个新的 multipart 请求
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-
-	// 添加文件字段
-	part, err := writer.CreateFormFile("file", request.FilePath)
-	if err != nil {
-		log.Fatalf("创建文件字段失败: %v", err)
-	}
-	_, err = io.Copy(part, file)
-	if err != nil {
-		log.Fatalf("复制文件内容失败: %v", err)
+	if request.FilePath != "" {
+		file, err := os.Open(request.FilePath)
+		if err != nil {
+			log.Fatalf("无法打开文件: %v", err)
+		}
+		defer file.Close()
+		if request.FileName == "" {
+			request.FileName = file.Name()
+		}
+		part, err := writer.CreateFormFile("file", request.FileName)
+		if err != nil {
+			log.Fatalf("创建文件字段失败: %v", err)
+		}
+		_, err = io.Copy(part, file)
+		if err != nil {
+			log.Fatalf("复制文件内容失败: %v", err)
+		}
+	} else {
+		// 添加文件字段
+		part, err := writer.CreateFormFile("file", request.FileName)
+		if err != nil {
+			log.Fatalf("创建文件字段失败: %v", err)
+		}
+		_, err = io.Copy(part, bytes.NewReader(request.FileContent))
+		if err != nil {
+			log.Fatalf("复制文件内容失败: %v", err)
+		}
 	}
 
 	// 添加用户字段
-	err = writer.WriteField("user", request.User)
+	err := writer.WriteField("user", request.User)
 	if err != nil {
 		log.Fatalf("添加用户字段失败: %v", err)
 	}
