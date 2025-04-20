@@ -45,3 +45,14 @@ func (api *API) createBaseRequest(ctx context.Context, method, apiUrl string, bo
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	return req, nil
 }
+
+func (api *API) createBaseRequestRaw(ctx context.Context, method, apiUrl, contentTyp string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, method, api.c.getHost()+apiUrl, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+api.getSecret())
+	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set("Content-Type", contentTyp)
+	return req, nil
+}

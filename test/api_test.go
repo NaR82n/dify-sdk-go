@@ -11,11 +11,12 @@ import (
 	"sync"
 
 	"github.com/KevinZhao/dify-sdk-go"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
-	host         = "这里填写你的host"
-	apiSecretKey = "这里填写你的api secret key"
+	host         = "http://localhost"
+	apiSecretKey = ""
 )
 
 func TestApi3(t *testing.T) {
@@ -84,6 +85,18 @@ func TestMessages(t *testing.T) {
 	}
 	j, _ := json.Marshal(msg)
 	t.Log(string(j))
+}
+
+func TestUploadFile(t *testing.T) {
+	req := dify.FileUploadRequest{
+		FilePath: "./README.md",
+		User:     "fffff",
+	}
+
+	var client = dify.NewClient(host, apiSecretKey)
+	resp, err := client.API().UploadFile(context.Background(), req)
+	assert.NoError(t, err)
+	t.Log(resp)
 }
 
 func TestMessagesFeedbacks(t *testing.T) {
